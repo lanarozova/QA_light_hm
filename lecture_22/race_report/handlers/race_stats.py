@@ -9,15 +9,17 @@ from prettytable import PrettyTable
 
 def get_all_race_info(abbreviations: dict, start_race_data: dict, end_race_data: dict) -> dict[dict]:
     all_race_info = defaultdict(dict)
+
     for key in abbreviations:
         all_race_info[key]["abbr"] = abbreviations[key]
-        start = start_race_data[key]["start"]
-        end = end_race_data[key]["end"]
+        start = datetime.datetime.fromisoformat(start_race_data[key]["start"])
+        end = datetime.datetime.fromisoformat(end_race_data[key]["end"])
+        if end < start:
+            end, start = start, end
         all_race_info[key]["start"] = start
         all_race_info[key]["end"] = end
-        all_race_info[key]["result"] = str(
-            datetime.datetime.fromisoformat(end) - datetime.datetime.fromisoformat(start)
-        )
+        all_race_info[key]["result"] = str(end - start)
+
     return all_race_info
 
 
