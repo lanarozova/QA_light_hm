@@ -1,5 +1,7 @@
 import argparse
 
+from main import main
+
 
 def parse_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -15,6 +17,15 @@ def parse_cli_args() -> argparse.Namespace:
         required=True
     )
     parser.add_argument(
+        "--order_by", "-ob",
+        metavar="order by",
+        action="store",
+        help="Order by key: 'abbreviation', 'name', 'team', 'start', 'end', 'result'. "
+             "Default sort key is 'abbreviation'",
+        default='abbreviation',
+        required=False
+    )
+    parser.add_argument(
         "--order", "-o",
         metavar="order",
         action="store",
@@ -23,25 +34,20 @@ def parse_cli_args() -> argparse.Namespace:
         required=False
     )
     parser.add_argument(
-        "--orderby",
-        metavar="order by",
-        action="store",
-        help="Order by key: 'end' for end of race time, 'abbreviation', 'driver', 'team'",
-        default='abbreviation',
-        required=False
-    )
-    parser.add_argument(
         "--driver", "-d",
         metavar="driver",
-        help="Show statistics about driver",
+        help="Show information about a single driver",
         default=False
     )
-    return parser.parse_args()
+    arguments = parser.parse_args()
+    return arguments
 
 
-if __name__ == "__main":
+if __name__ == "__main__":
     args = parse_cli_args()
     folder = args.files
-    order_asc = args.asc
-    order_desc = args.desc
+    order_by = args.order_by
+    order = args.order
     driver = args.driver
+
+    main(folder, order_by=order_by, order=order, driver=driver)

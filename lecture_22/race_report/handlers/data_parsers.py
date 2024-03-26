@@ -1,11 +1,9 @@
-import datetime
-import os
 from pathlib import PureWindowsPath
 from collections import defaultdict
 import re
 
 
-def parse_log_file_data(log_file_path: PureWindowsPath):
+def parse_log_file_data(log_file_path: PureWindowsPath) -> dict:
     start_or_end = "start" if re.search(r"start", log_file_path.name) else "end"
     data = defaultdict(dict)
     with open(log_file_path) as file:
@@ -17,21 +15,10 @@ def parse_log_file_data(log_file_path: PureWindowsPath):
     return data
 
 
-def parse_abbreviations(file_path: PureWindowsPath):
+def parse_abbreviations(file_path: PureWindowsPath) -> dict:
     abbreviations = {}
     with open(file_path) as file:
         for line in file.readlines():
             abbr = line.strip().split("_")
             abbreviations[abbr[0]] = abbr
     return abbreviations
-
-
-if __name__ == "__main__":
-    filepath = os.path.abspath("data_parsers.py")
-    logfile_name = r"racing_data\start.log"
-    p = PureWindowsPath(filepath).parents[1].joinpath(logfile_name)
-    print(p.name)
-
-
-
-

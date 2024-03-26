@@ -1,7 +1,7 @@
 import re
 import datetime
 import os
-from pathlib import PurePath, PureWindowsPath
+from pathlib import PureWindowsPath
 
 
 def validate_folder(folder: str) -> bool:
@@ -72,23 +72,3 @@ def validate_abbreviations_file_format(file_path: PureWindowsPath) -> bool:
               "Should be 'ABBR_Firstname Lastname_COMMAND NAME'")
         return False
     return True
-
-
-if __name__ == "__main__":
-    filepath = os.path.abspath("validators.py")
-    logfile_name = r"racing_data\start.log"
-    abbr_file = r"racing_data\abbreviations.txt"
-    p = PureWindowsPath(filepath).parents[1].joinpath(logfile_name)
-    abbr_p = PureWindowsPath(filepath).parents[1].joinpath(abbr_file)
-    print(p)
-    date = "2018-05-24"
-    time = "12:02:58.9t5"
-    log_f = "SVF2018-05-24_12:02:58.917"
-    print(validate_log_file_format(p))
-
-    print(validate_abbreviations_file_format(abbr_p))
-
-
-
-
-
