@@ -1,7 +1,7 @@
 import pygame
 from cycle_generator import Cycle
 
-from colors_texts_images import black, white, yellow, s_colors, dogs, texts
+from colors_texts_images import black, yellow, s_colors, dogs, texts
 
 
 def initial_game_setup():
