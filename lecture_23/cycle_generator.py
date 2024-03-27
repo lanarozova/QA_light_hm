@@ -1,11 +1,11 @@
-from typing import Iterable
+from typing import Collection, Any, Iterable, Self
 
 
-class Cycle():
-    def __init__(self, elements) -> None:
+class Cycle:
+    def __init__(self, elements: Collection[Any]) -> None:
         self.elements = elements
 
-    def __iter__(self) -> Iterable:
+    def __iter__(self) -> Self:
         self.current_element = 0
         return self
 
@@ -16,19 +16,3 @@ class Cycle():
             return result
         else:
             raise StopIteration
-
-
-if __name__ == "__main__":
-    # testing
-    ls = [1, 2, 3]
-
-    iterator = iter(Cycle(ls))
-
-    print(next(iterator))
-    print(next(iterator))
-    print(next(iterator))
-    print(next(iterator))
-    print(next(iterator))
-    print(next(iterator))
-    print(next(iterator))
-    print(next(iterator))
