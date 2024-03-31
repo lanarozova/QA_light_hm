@@ -9,7 +9,6 @@ CELL = (CELL_SIZE, CELL_SIZE)
 STEP = 20
 SCREEN_W = CELL_SIZE * 50
 SCREEN_H = CELL_SIZE * 30
-SPEED = 4
 
 colors = {
     "black": (0, 0, 0),
@@ -33,9 +32,10 @@ directions = {
     "right": (1, 0)
 }
 
-degrees = {
-    "up": 0,
-    "down": 180,
-    "right": 90,
-    "left": 270
+
+folder = "images"
+images = {
+    "snake": "snake.png",
+    "body": "body_2.png",
+    "apple": "apple.png"
 }

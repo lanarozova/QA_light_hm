@@ -1,5 +1,4 @@
 from os import path
-
 from config import *
 import screen
 from instances import GameElement, Worm, Apple
@@ -7,34 +6,23 @@ from instances import GameElement, Worm, Apple
 
 def play_game():
     pg.init()
+
+    #  game instances creation
     game_scrn = screen.create(SCREEN_W, SCREEN_H, colors["black"])
 
-    #  snake creation
-    head = GameElement((SCREEN_W // 2, SCREEN_H // 2), CELL, image=path.join("images", "snake.png"))
-    body_1 = GameElement((SCREEN_W // 2, SCREEN_H // 2 + CELL_SIZE), CELL, image=path.join("images", "body.png"))
-    body_2 = GameElement((SCREEN_W // 2, SCREEN_H // 2 + CELL_SIZE * 2), CELL, image=path.join("images", "body.png"))
-    body_3 = GameElement((SCREEN_W // 2, SCREEN_H // 2 + CELL_SIZE * 3), CELL, image=path.join("images", "body.png"))
-    # body_4 = SnakeElement(SCREEN_W // 2, SCREEN_H // 2 + CELL * 4, (CELL, CELL), path.join("images", "body.png"))
-    # body_5 = SnakeElement(SCREEN_W // 2, SCREEN_H // 2 + CELL * 5, (CELL, CELL), path.join("images", "body.png"))
-    # body_6 = SnakeElement(SCREEN_W // 2, SCREEN_H // 2 + CELL * 6, (CELL, CELL), path.join("images", "body.png"))
+    head = GameElement((SCREEN_W // 2, SCREEN_H // 2), CELL, image=path.join(folder, images["snake"]))
     worm = Worm(head)
-    worm.extend(body_1)
-    worm.extend(body_2)
-    worm.extend(body_3)
-    # snake.extend(body_4)
-    # snake.extend(body_5)
-    # snake.extend(body_6)
+    worm.extend()
 
-    #  game logic
+    apple = Apple((0, 0), CELL, image=path.join(folder, images["apple"]))
+    apple.set_new_random_pos(game_scrn, worm.get_positions())
 
-    apple = Apple((40, 40), CELL, image=path.join("images", "apple.png"))
     clock = pg.time.Clock()
     direction = ""
     running = True
     curr_offset = [0, 0]
-    # snake.blit(screen)
+    speed = 4
 
-    # counter = 0
     while running:
 
         for event in pg.event.get():
@@ -43,14 +31,17 @@ def play_game():
                 running = False
 
             if event.type == pg.KEYDOWN:
-                direction = worm.define_direction(event.key)
+                if event.key in [pg.K_UP, pg.K_DOWN, pg.K_RIGHT, pg.K_LEFT]:
+                    direction = worm.define_direction(event.key, direction)
 
         if direction:
-            apple.set_new_random_pos(game_scrn, worm.get_positions())
-            angle = degrees[direction]
             curr_offset[0] = STEP * directions[direction][0]
             curr_offset[1] = STEP * directions[direction][1]
-            worm.move(curr_offset, angle)
+            worm.move(curr_offset, direction)
+            if worm.is_collision(apple.rect):
+                worm.extend()
+                apple.set_new_random_pos(game_scrn, worm.get_positions())
+                speed += 1
 
         game_scrn.fill(colors["black"])
         screen.draw_grid(game_scrn, cell_size=CELL_SIZE)
@@ -59,7 +50,7 @@ def play_game():
         apple.draw(game_scrn)
         worm.draw(game_scrn)
         pg.display.flip()
-        clock.tick(SPEED)
+        clock.tick(speed)
         # counter += 1
 
     pg.quit()

@@ -1,28 +1,24 @@
-
+from os import path
 from config import *
 import random
 
 
 class GameElement:
 
-    def __init__(self, pos: tuple, size: tuple, image="", color=""):
+    def __init__(self, pos: tuple, size: tuple, image="", color="", direction="up"):
         if image or color:
             self.size = size
-            self.degree = 0
+            self.direction = direction
             if image:
                 self.surface = pg.image.load(image).convert_alpha()
                 self.surface = pg.transform.scale(self.surface, size)
                 self.rect = self.surface.get_rect(x=pos[0], y=pos[1])
-                self.element = (self.surface, self.rect)
             if color:
                 self.surface = pg.Surface(self.size)
                 self.rect = self.surface.get_rect(x=pos[0], y=pos[1])
-                self.element = (self.surface, self.rect)
+
         else:
             raise TypeError("Insufficient arguments to create a class object. Image or color is necessary.")
-
-    def get_element(self):
-        return self.element
 
     def get_pos(self):
         return self.rect.x, self.rect.y
@@ -39,16 +35,29 @@ class GameElement:
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
-    def rotate(self, desired):
-        angles = [0, 90, 180, 270]
-        degree = None
-        if desired in angles and desired != self.degree:
-            if desired > self.degree:
-                degree = desired - self.degree
-            if desired < self.degree:
-                degree = 360 - self.degree + desired
-            self.surface = pg.transform.rotate(self.surface, -degree)
-            self.degree = desired
+    def rotate(self, direction="up"):
+        degrees = {"up": 0,
+                  "left": 270,
+                  "down": 180,
+                  "right": 90}
+        rotate_degree = None
+        required_degree = degrees[direction]
+        current_degree = degrees[self.direction]
+
+        if direction in degrees and degrees[direction] != current_degree:
+            if required_degree > current_degree:
+                rotate_degree = required_degree - current_degree
+            if degrees[direction] < current_degree:
+                rotate_degree = 360 - current_degree + required_degree
+
+            self.surface = pg.transform.rotate(self.surface, -rotate_degree)
+            self.direction = direction
+
+    @staticmethod
+    def generate_new_pos(scrn: pg.Surface, cell_size: int):
+        x = random.randrange(0, scrn.get_width(), cell_size)
+        y = random.randrange(0, scrn.get_height(), cell_size)
+        return x, y
 
 
 class Worm:
@@ -61,45 +70,61 @@ class Worm:
     def __len__(self):
         return len(self.body)
 
-    def extend(self, body_el: GameElement):
-        self.body.append(body_el)
-
     def get_positions(self):
         positions = []
         for element in self.body:
             positions.append(element.get_pos())
         return positions
 
-    def move(self, offset, angle):
+    def define_direction(self, event_key, current_direction):
+        direction = current_direction
+        if event_key == pg.K_DOWN and self.head.direction != UP:
+            direction = DOWN
+        if event_key == pg.K_UP and self.head.direction != DOWN:
+            direction = UP
+        if event_key == pg.K_RIGHT and self.head.direction != LEFT:
+            direction = RIGHT
+        if event_key == pg.K_LEFT and self.head.direction != RIGHT:
+            direction = LEFT
+        return direction
+
+    def move(self, offset, direction):
         next_x, next_y = self.head.get_pos()
 
         for i, el in enumerate(self.body):
 
             if el == self.head:
-                self.head.rotate(angle)
+                self.head.rotate(direction)
                 self.head.move(offset)
             else:
                 current_x, current_y = el.get_pos()
                 if self.body[i-1].rect.x != el.rect.x and self.body[i-1].rect.y != el.rect.y:
-                    el.rotate(angle)
+                    el.rotate(direction)
                 el.set_pos((next_x, next_y))
                 next_x, next_y = current_x, current_y
-
-    def define_direction(self, event_key):
-        direction = ""
-        if event_key == pg.K_DOWN and self.head.degree != degrees[UP]:
-            direction = DOWN
-        if event_key == pg.K_UP and self.head.degree != degrees[DOWN]:
-            direction = UP
-        if event_key == pg.K_RIGHT and self.head.degree != degrees[LEFT]:
-            direction = RIGHT
-        if event_key == pg.K_LEFT and self.head.degree != degrees[RIGHT]:
-            direction = LEFT
-        return direction
 
     def draw(self, scrn):
         for el in self.body:
             el.draw(scrn)
+
+    def is_collision(self, game_el_rect: pg.Rect):
+        return self.head.rect.colliderect(game_el_rect)
+
+    def extend(self):
+        next_body_el_pos = ()
+        last_el = self.body[-1]
+        if last_el.direction == UP:
+            next_body_el_pos = last_el.rect.bottomleft[0] + 1, last_el.rect.bottomleft[1] + 1
+        if last_el.direction == DOWN:
+            next_body_el_pos = last_el.rect.topleft[0] + CELL_SIZE, last_el.rect.topleft[1]
+        if last_el.direction == LEFT:
+            next_body_el_pos = last_el.rect.topright[0], last_el.rect.topright[1]
+        if last_el.direction == RIGHT:
+            next_body_el_pos = last_el.rect.topleft[0], last_el.rect.topleft[1] - CELL_SIZE
+
+        next_body_el = GameElement(next_body_el_pos, CELL, image=path.join(folder, images["body"]))
+        next_body_el.rotate(last_el.direction)
+        self.body.append(next_body_el)
 
 
 class Apple(GameElement):
@@ -107,6 +132,7 @@ class Apple(GameElement):
     def __init__(self, pos, size, image):
         super().__init__(pos, size, image)
 
+    # TODO: accept taken positions as args and check if taken depending on all objects on the field
     @staticmethod
     def is_new_pos_taken(worm_positions: list[tuple], new_pos: tuple):
         for pos in worm_positions:
@@ -115,17 +141,9 @@ class Apple(GameElement):
             else:
                 return False
 
-    @staticmethod
-    def generate_new_pos(scrn: pg.Surface, cell_size: int):
-        x = random.randrange(0, scrn.get_width(), cell_size)
-        y = random.randrange(0, scrn.get_height(), cell_size)
-        return x, y
-
     def set_new_random_pos(self, scrn: pg.Surface, worm_positions: list[tuple], ):
         new_pos = Apple.generate_new_pos(scrn, CELL_SIZE)
         taken = Apple.is_new_pos_taken(worm_positions, new_pos)
         while taken and new_pos != self.get_pos():
             new_pos = Apple.generate_new_pos(scrn, CELL_SIZE)
         self.set_pos(new_pos)
-
-
