@@ -1,7 +1,8 @@
-import pygame as pg
+from config import pg
 
 
-def screen(h, w, color):
+# TODO: change to class with inheritance (Surface)
+def create(h, w, color):
     scrn = pg.display.set_mode((h, w))
     scrn.fill(color)
     return scrn
@@ -23,4 +24,9 @@ def draw_grid(scrn: pg.Surface, cell_size):
 
         start = [scrn.get_width(), cell_size]
         end = [0, cell_size]
+
+
+# TODO: create field in green colors and chess order of the rectangles
+# def draw_field(scrn: pg.Surface, cell_size):
+#     pass
 
