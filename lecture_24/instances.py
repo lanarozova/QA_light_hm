@@ -54,13 +54,13 @@ class GameElement:
             self.direction = direction
 
     @staticmethod
-    def generate_new_pos(scrn: pg.Surface, cell_size: int):
-        x = random.randrange(0, scrn.get_width(), cell_size)
-        y = random.randrange(0, scrn.get_height(), cell_size)
+    def generate_random_pos(scrn_width, scrn_height, cell_size: int):
+        x = random.randrange(0, scrn_width, cell_size)
+        y = random.randrange(0, scrn_height, cell_size)
         return x, y
 
 
-class Worm:
+class Snake:
 
     def __init__(self, head: GameElement):
         self.head = head
@@ -107,9 +107,6 @@ class Worm:
         for el in self.body:
             el.draw(scrn)
 
-    def is_collision(self, game_el_rect: pg.Rect):
-        return self.head.rect.colliderect(game_el_rect)
-
     def extend(self):
         next_body_el_pos = ()
         last_el = self.body[-1]
@@ -126,13 +123,29 @@ class Worm:
         next_body_el.rotate(last_el.direction)
         self.body.append(next_body_el)
 
+    def is_collision_with_another_el(self, game_el_rect: pg.Rect):
+        return self.head.rect.colliderect(game_el_rect)
+
+    def is_collision_with_own_body(self):
+        for el in self.body[1:]:
+            if self.head.rect.colliderect(el.rect):
+                return True
+        return False
+
+    def is_collision_with_screen_border(self, scrn: pg.Surface):
+        width, height = scrn.get_width(), scrn.get_height()
+        if self.head.rect.right < 20 or self.head.rect.left > width - 20:
+            return True
+        if self.head.rect.top < 0 or self.head.rect.bottom > height:
+            return True
+        return False
+
 
 class Apple(GameElement):
 
     def __init__(self, pos, size, image):
         super().__init__(pos, size, image)
 
-    # TODO: accept taken positions as args and check if taken depending on all objects on the field
     @staticmethod
     def is_new_pos_taken(worm_positions: list[tuple], new_pos: tuple):
         for pos in worm_positions:
@@ -142,8 +155,8 @@ class Apple(GameElement):
                 return False
 
     def set_new_random_pos(self, scrn: pg.Surface, worm_positions: list[tuple], ):
-        new_pos = Apple.generate_new_pos(scrn, CELL_SIZE)
+        new_pos = Apple.generate_random_pos(scrn.get_width(), scrn.get_height(), CELL_SIZE)
         taken = Apple.is_new_pos_taken(worm_positions, new_pos)
         while taken and new_pos != self.get_pos():
-            new_pos = Apple.generate_new_pos(scrn, CELL_SIZE)
+            new_pos = Apple.generate_random_pos(scrn.get_width(), scrn.get_height(), CELL_SIZE)
         self.set_pos(new_pos)
