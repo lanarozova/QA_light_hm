@@ -29,7 +29,7 @@ def play_game():
     clock = pg.time.Clock()
     direction = random.choice([UP, DOWN, RIGHT, LEFT])
     curr_offset = [0, 0]
-    speed = 1
+    speed = 4
     apple_counter = 0
     colors_gen = iter(Cycle([color for color in scrn_colors]))
     scrn_color = next(colors_gen)
@@ -65,7 +65,7 @@ def play_game():
                 apple_counter += 1
                 if apple_counter % 5 == 0:
                     scrn_color = next(colors_gen)
-                    # speed += 1
+                    speed += 1
 
             snake.calc_body_direction()
 
