@@ -29,7 +29,7 @@ def play_game():
     clock = pg.time.Clock()
     direction = random.choice([UP, DOWN, RIGHT, LEFT])
     curr_offset = [0, 0]
-    speed = 3
+    speed = 1
     apple_counter = 0
     colors_gen = iter(Cycle([color for color in scrn_colors]))
     scrn_color = next(colors_gen)
@@ -49,14 +49,14 @@ def play_game():
                 if event.key in [pg.K_UP, pg.K_DOWN, pg.K_RIGHT, pg.K_LEFT]:
                     paused = False
                     direction = snake.define_direction(event.key, direction)
-                # if event.key == pg.K_SPACE:
-                #     # pause_pressed = True if not paused else False
-                #     paused = True
+                    snake.head.rotate(direction)
+                elif event.key == pg.K_SPACE:
+                    paused = not paused
 
         if not paused:
             curr_offset[0] = STEP * directions[direction][0]
             curr_offset[1] = STEP * directions[direction][1]
-            snake.move(curr_offset, direction)
+            snake.move(curr_offset)
 
             # checking apple collision and changing scrn color / snake speed
             if snake.is_collision_with_another_el(apple.rect):
@@ -65,7 +65,9 @@ def play_game():
                 apple_counter += 1
                 if apple_counter % 5 == 0:
                     scrn_color = next(colors_gen)
-                    speed += 1
+                    # speed += 1
+
+            snake.calc_body_direction()
 
             #  checking collisions with scrn borders or snake own body
             if snake.is_collision_with_own_body() or snake.is_collision_with_screen_border(game_scrn):

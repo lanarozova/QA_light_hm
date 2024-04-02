@@ -88,20 +88,42 @@ class Snake:
             direction = LEFT
         return direction
 
-    def move(self, offset, direction):
-        next_x, next_y = self.head.get_pos()
+    def calc_body_direction(self):
+        prev_x, prev_y = self.head.rect.x, self.head.rect.y
+
+        for i, el in enumerate(self.body):
+            if el == self.head:
+                continue
+
+            element_direction = ""
+            current_x, current_y = el.get_pos()
+            delta_x = prev_x - current_x
+            delta_y = prev_y - current_y
+            if delta_x == STEP:
+                element_direction = RIGHT
+            elif delta_x == -STEP:
+                element_direction = LEFT
+            elif delta_y == STEP:
+                element_direction = DOWN
+            elif delta_y == -STEP:
+                element_direction = UP
+            else:
+                pass
+            prev_x, prev_y = current_x, current_y
+
+            el.rotate(element_direction)
+
+    def move(self, offset):
+        prev_x, prev_y = self.head.get_pos()
 
         for i, el in enumerate(self.body):
 
             if el == self.head:
-                self.head.rotate(direction)
                 self.head.move(offset)
             else:
                 current_x, current_y = el.get_pos()
-                if self.body[i-1].rect.x != el.rect.x and self.body[i-1].rect.y != el.rect.y:
-                    el.rotate(direction)
-                el.set_pos((next_x, next_y))
-                next_x, next_y = current_x, current_y
+                el.set_pos((prev_x, prev_y))
+                prev_x, prev_y = current_x, current_y
 
     def draw(self, scrn):
         for el in self.body:
@@ -111,13 +133,13 @@ class Snake:
         next_body_el_pos = ()
         last_el = self.body[-1]
         if last_el.direction == UP:
-            next_body_el_pos = last_el.rect.bottomleft[0] + 1, last_el.rect.bottomleft[1] + 1
+            next_body_el_pos = last_el.rect.bottomleft[0], last_el.rect.bottomleft[1]
         if last_el.direction == DOWN:
-            next_body_el_pos = last_el.rect.topleft[0] + CELL_SIZE, last_el.rect.topleft[1]
+            next_body_el_pos = last_el.rect.topleft[0], last_el.rect.topleft[1] + CELL_SIZE
         if last_el.direction == LEFT:
             next_body_el_pos = last_el.rect.topright[0], last_el.rect.topright[1]
         if last_el.direction == RIGHT:
-            next_body_el_pos = last_el.rect.topleft[0], last_el.rect.topleft[1] - CELL_SIZE
+            next_body_el_pos = last_el.rect.topleft[0] - CELL_SIZE, last_el.rect.topleft[1]
 
         next_body_el = GameElement(next_body_el_pos, CELL, image=path.join(folder, images["body"]))
         next_body_el.rotate(last_el.direction)
@@ -134,7 +156,7 @@ class Snake:
 
     def is_collision_with_screen_border(self, scrn: pg.Surface):
         width, height = scrn.get_width(), scrn.get_height()
-        if self.head.rect.right < 20 or self.head.rect.left > width - 20:
+        if self.head.rect.right < CELL_SIZE or self.head.rect.left > width - CELL_SIZE:
             return True
         if self.head.rect.top < 0 or self.head.rect.bottom > height:
             return True
