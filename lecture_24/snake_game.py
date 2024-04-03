@@ -14,20 +14,15 @@ def play_game():
     #  game instances creation
     game_scrn = screen.create(SCREEN_W, SCREEN_H, colors["black"])
 
-    head = GameElement((0, 0), CELL, image=path.join(folder, images["snake"]))
-    head.set_pos(GameElement.generate_random_pos(SCREEN_W, SCREEN_H, CELL_SIZE))
-    snake = Snake(head)
-    # just to have some body with the head
-    snake.extend()
-    snake.extend()
+    direction = random.choice([UP, DOWN, RIGHT, LEFT])
+    snake = Snake(game_scrn, CELL, image=path.join(folder, images["snake"]), direction=direction)
 
-    apple = Apple((0, 0), CELL, image=path.join(folder, images["apple"]))
+    apple = Apple(CELL, image=path.join(folder, images["apple"]))
     apple.set_new_random_pos(game_scrn, snake.get_positions())
 
     # other needed things
     paused = True
     clock = pg.time.Clock()
-    direction = random.choice([UP, DOWN, RIGHT, LEFT])
     curr_offset = [0, 0]
     speed = 4
     apple_counter = 0
@@ -38,15 +33,17 @@ def play_game():
     game_over = pg.transform.scale(game_over, (SCREEN_W, SCREEN_H))
 
     while True:
-
-        for event in pg.event.get():
+        events = pg.event.get()
+        keys_pressed = 0
+        for event in events:
 
             if event.type == pg.QUIT:
                 pg.quit()
                 sys.exit()
 
             if event.type == pg.KEYDOWN:
-                if event.key in [pg.K_UP, pg.K_DOWN, pg.K_RIGHT, pg.K_LEFT]:
+                keys_pressed += 1
+                if event.key in [pg.K_UP, pg.K_DOWN, pg.K_RIGHT, pg.K_LEFT] and keys_pressed < 2:
                     paused = False
                     direction = snake.define_direction(event.key, direction)
                     snake.head.rotate(direction)
@@ -56,6 +53,7 @@ def play_game():
         if not paused:
             curr_offset[0] = STEP * directions[direction][0]
             curr_offset[1] = STEP * directions[direction][1]
+            # pg.time.wait(100)
             snake.move(curr_offset)
 
             # checking apple collision and changing scrn color / snake speed

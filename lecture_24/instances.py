@@ -8,14 +8,16 @@ class GameElement:
     def __init__(self, pos: tuple, size: tuple, image="", color="", direction="up"):
         if image or color:
             self.size = size
-            self.direction = direction
+            self.direction = "up"
             if image:
                 self.surface = pg.image.load(image).convert_alpha()
                 self.surface = pg.transform.scale(self.surface, size)
                 self.rect = self.surface.get_rect(x=pos[0], y=pos[1])
-            if color:
+            elif color:
                 self.surface = pg.Surface(self.size)
                 self.rect = self.surface.get_rect(x=pos[0], y=pos[1])
+            if self.direction != direction:
+                self.rotate(direction)
 
         else:
             raise TypeError("Insufficient arguments to create a class object. Image or color is necessary.")
@@ -35,7 +37,7 @@ class GameElement:
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
-    def rotate(self, direction="up"):
+    def rotate(self, direction):
         degrees = {"up": 0,
                   "left": 270,
                   "down": 180,
@@ -62,10 +64,13 @@ class GameElement:
 
 class Snake:
 
-    def __init__(self, head: GameElement):
-        self.head = head
-        self.body = []
-        self.body.append(self.head)
+    def __init__(self, scrn: pg.Surface, size: tuple, pos: tuple = (0, 0), image="", color="", direction="up", length: int = 3):
+        self.head = GameElement(pos, size, image, color, direction)
+        self.body = [self.head]
+        self.length = length
+        self.set_random_pos(scrn, CELL_SIZE)
+        for _ in range(self.length - 1):
+            self.extend()
 
     def __len__(self):
         return len(self.body)
@@ -76,8 +81,31 @@ class Snake:
             positions.append(element.get_pos())
         return positions
 
+    def set_random_pos(self, scrn: pg.Surface, cell_size):
+        screen_w = scrn.get_width()
+        screen_h = scrn.get_height()
+        min_x = min_y = max_x = max_y = 0
+        if self.head.direction == UP:
+            min_y = 0
+            max_y = screen_h - cell_size * self.length
+        if self.head.direction == DOWN:
+            min_y = 0 + cell_size * self.length
+            max_y = screen_h - cell_size
+        if self.head.direction == RIGHT:
+            min_x = 0 + cell_size * self.length
+            max_x = screen_w - cell_size
+        if self.head.direction == LEFT:
+            min_x = 0
+            max_x = screen_w - cell_size * self.length
+
+        new_pos = GameElement.generate_random_pos(screen_w, screen_h, cell_size)
+        while new_pos[0] not in range(min_x, max_x) and new_pos[1] not in range(min_y, max_y):
+            new_pos = GameElement.generate_random_pos(screen_w, screen_h, cell_size)
+        self.head.set_pos(new_pos)
+
     def define_direction(self, event_key, current_direction):
         direction = current_direction
+
         if event_key == pg.K_DOWN and self.head.direction != UP:
             direction = DOWN
         if event_key == pg.K_UP and self.head.direction != DOWN:
@@ -135,7 +163,7 @@ class Snake:
         if last_el.direction == UP:
             next_body_el_pos = last_el.rect.bottomleft[0], last_el.rect.bottomleft[1]
         if last_el.direction == DOWN:
-            next_body_el_pos = last_el.rect.topleft[0], last_el.rect.topleft[1] + CELL_SIZE
+            next_body_el_pos = last_el.rect.topleft[0], last_el.rect.topleft[1] - CELL_SIZE
         if last_el.direction == LEFT:
             next_body_el_pos = last_el.rect.topright[0], last_el.rect.topright[1]
         if last_el.direction == RIGHT:
@@ -165,7 +193,7 @@ class Snake:
 
 class Apple(GameElement):
 
-    def __init__(self, pos, size, image):
+    def __init__(self, size, image, pos: tuple = (0, 0), ):
         super().__init__(pos, size, image)
 
     @staticmethod
