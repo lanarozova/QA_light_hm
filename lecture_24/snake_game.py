@@ -3,8 +3,8 @@ import sys
 import random
 
 from config import *
-import screen
-from instances import GameElement, Snake, Apple
+from screen import create, draw_grid
+from instances import Snake, Apple
 from cycle_generator import Cycle
 
 
@@ -12,13 +12,13 @@ def play_game():
     pg.init()
 
     #  game instances creation
-    game_scrn = screen.create(SCREEN_W, SCREEN_H, colors["black"])
+    game_display = create(SCREEN_W, SCREEN_H, colors["black"])
 
     direction = random.choice([UP, DOWN, RIGHT, LEFT])
-    snake = Snake(game_scrn, CELL, image=path.join(folder, images["snake"]), direction=direction)
+    snake = Snake(game_display, CELL, image=path.join(folder, images["snake"]), direction=direction)
 
     apple = Apple(CELL, image=path.join(folder, images["apple"]))
-    apple.set_new_random_pos(game_scrn, snake.get_positions())
+    apple.set_new_random_pos(game_display, snake.get_positions())
 
     # other needed things
     paused = True
@@ -53,38 +53,37 @@ def play_game():
         if not paused:
             curr_offset[0] = STEP * directions[direction][0]
             curr_offset[1] = STEP * directions[direction][1]
-            # pg.time.wait(100)
             snake.move(curr_offset)
+            snake.calc_body_direction()
 
             # checking apple collision and changing scrn color / snake speed
             if snake.is_collision_with_another_el(apple.rect):
                 snake.extend()
-                apple.set_new_random_pos(game_scrn, snake.get_positions())
+                apple.set_new_random_pos(game_display, snake.get_positions())
                 apple_counter += 1
                 if apple_counter % 5 == 0:
                     scrn_color = next(colors_gen)
                     speed += 1
 
-            snake.calc_body_direction()
-
             #  checking collisions with scrn borders or snake own body
-            if snake.is_collision_with_own_body() or snake.is_collision_with_screen_border(game_scrn):
-                game_scrn.blit(game_over, (0, 0))
-                go_text = SYS_FONT.render(f"Your score is {apple_counter}.", True, colors["black"])
+            if snake.is_collision_with_own_body() or snake.is_collision_with_screen_border(game_display):
+                game_display.blit(game_over, (0, 0))
+                go_text = SYS_FONT.render(f"YOUR SCORE IS {apple_counter}", True, colors["black"])
                 go_text_rect = go_text.get_rect()
                 go_text_rect.center = (SCREEN_W / 2, SCREEN_H / 8)
-                game_scrn.blit(go_text, go_text_rect)
+                game_display.blit(go_text, go_text_rect)
                 pg.display.flip()
                 pg.time.wait(1500)
                 pg.quit()
                 sys.exit()
 
         #  drawing screen
-        game_scrn.fill(scrn_colors[scrn_color])
-        screen.draw_grid(game_scrn, cell_size=CELL_SIZE)
+        game_display.fill(scrn_colors[scrn_color])
+        draw_grid(game_display, CELL_SIZE)
+
         # placing game elements on the screen and updating display
-        apple.draw(game_scrn)
-        snake.draw(game_scrn)
+        apple.draw(game_display)
+        snake.draw(game_display)
         pg.display.flip()
         clock.tick(speed)
 
