@@ -1,7 +1,15 @@
 from typing import NamedTuple
 
+
 from validators import Validator
-from user import UserManager
+from user_manager import UserManager
+from exceptions import (PhoneValidationError,
+                        EmailValidationError,
+                        NameValidationError,
+                        FieldDoesNotExistError,
+                        UserDoesNotExistError,
+                        UserAlreadyExistsError,
+                        UpdateInfoNotUniqueError)
 
 
 class UserTemplate(NamedTuple):
@@ -17,39 +25,95 @@ class InputManager:
         self.validator = validator
         self.user_manager = user_manager
 
+    @staticmethod
+    def _validate_input( input_prompt, validate_func):
+        inp = input(input_prompt).lower()
+        if validate_func(inp):
+            return inp
+
     def create(self):
-        first_name = self.validator.validate_name(input("Enter first name: "))
-        last_name = self.validator.validate_name(input("Enter last name: "))
-        email = self.validator.validate_email(input("Enter email: "))
-        phone_number = self.validator.validate_phone_number(input("Enter phone number: "))
+        try:
+            first_name = self._validate_input("Enter first name: ", self.validator.validate_name).capitalize()
+            last_name = self._validate_input("Enter last name: ", self.validator.validate_name).capitalize()
+            email = self._validate_input("Enter email: ", self.validator.validate_email)
+            phone_number = self._validate_input("Enter phone number: ", self.validator.validate_phone_number)
 
-        user = UserTemplate(
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            phone_number=phone_number
-        )
+            if all([first_name, last_name, email, phone_number]):
 
-        self.user_manager.create(user.first_name, user.last_name, user.email, user.phone_number)
+                user = UserTemplate(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    phone_number=phone_number
+                )
+                self.user_manager.create(user.first_name, user.last_name, user.email, user.phone_number)
+                print("The user has been successfully created.")
+        except (PhoneValidationError, EmailValidationError, NameValidationError, UserAlreadyExistsError) as error:
+            print(error)
 
-# validators should return True or False only
     def _validate_optional_input(self, func):
-        inp = input("Enter first and last name OR email OR phone_number")
+        inp = input("Enter first and last name OR email OR phone_number: ")
         inp = inp.strip()
         first_last = inp.split(" ")
-        if len(first_last) > 1:
-            first_name = self.validator.validate_name(first_last[0])
-            last_name = self.validator.validate_name(first_last[1])
-            return func(first_name=first_name, last_name=last_name)
-        elif self.validator.validate_email(inp) is not None:
-            return func(email=self.validator.validate_email(inp))
+        if inp.isnumeric() and self.validator.validate_phone_number(inp):
+            return func(phone_number=inp)
+        elif len(first_last) > 1:
+            if self.validator.validate_name(first_last[0]) and self.validator.validate_name(first_last[1]):
+                first_name = first_last[0].lower().capitalize()
+                last_name = first_last[1].lower().capitalize()
+                return func(first_name=first_name, last_name=last_name)
+        elif self.validator.validate_email(inp):
+            return func(email=inp.lower())
         else:
-            phone_number = self.validator.validate_phone_number(inp)
-            if phone_number:
-                return func(phone_number=phone_number)
+            return "Input datum does not fit either name, phone number or email requirements"
 
     def read(self):
-        return self._validate_optional_input(self.user_manager.read)
+        try:
+            users = self._validate_optional_input(self.user_manager.read)
+            print(users)
+        except (UserDoesNotExistError, EmailValidationError, NameValidationError, PhoneValidationError) as error:
+            print(error)
 
     def delete(self):
-        return self._validate_optional_input(self.user_manager.delete)
+        try:
+            print(self._validate_optional_input(self.user_manager.delete))
+        except (UserDoesNotExistError, EmailValidationError, NameValidationError, PhoneValidationError) as error:
+            print(error)
+
+    def update(self):
+        try:
+            print("Fields that can be updated: full name, email, phone number")
+            user_inp = input("Enter the first and last name OR email of the user you want to update: ").strip().split()
+            field = input("Enter the field you want to update: ").lower()
+            new_value = input("Enter the new value: ").lower()
+
+            if all([user_inp, field, new_value]):
+
+                validate_name = self.validator.validate_name
+                validate_email = self.validator.validate_email
+
+                validate_field_value = self.validator.choose_validator(field)
+                first_last = new_value.split()
+                validated_field_value = first_last[0]
+                if len(first_last) > 1:
+                    temp = []
+                    for item in first_last:
+                        temp.append(validate_field_value(item))
+                    validated_field_value = all(temp)
+
+                if validated_field_value:
+                    if len(user_inp) > 1:
+                        first_name = user_inp[0].lower().capitalize()
+                        last_name = user_inp[1].lower().capitalize()
+                        if validate_name(first_name) and validate_name(last_name):
+                            print(self.user_manager.update(field, new_value, first_name=first_name, last_name=last_name))
+                else:
+                    email = user_inp[0]
+                    if validate_email(email):
+                        print(self.user_manager.update(field, new_value, email=email))
+
+        except (UserDoesNotExistError, UpdateInfoNotUniqueError, EmailValidationError, NameValidationError, FieldDoesNotExistError) as error:
+            print(error)
+
+    def read_all(self):
+        print(self.user_manager.read_all())

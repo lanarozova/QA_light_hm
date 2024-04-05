@@ -1,52 +1,34 @@
-
 from input_manager import InputManager
-from user import UserManager
+from user_manager import UserManager
 from validators import Validator
 
 
-# def user_management_cli(user_manager):
-#     print(f'Welcome to users application\n')
-#
-#     while True:
-#         user_command = input('>>>')
-#
-#         commands = {
-#             'create': user_manager.create,
-#             'read': user_manager.read,
-#             # 'update': user_manager.update_user,
-#             'delete': user_manager.delete,
-#         }
-#
-#         if user_command in commands:
-#             func = commands[user_command]
-#             func()
-#         elif user_command == 'exit':
-#             print('Exiting')
-#             break
-#         else:
-#             print('Unsupported command')
-
-
-if __name__ == "__main__":
-    user_manager = UserManager("test.txt")
+def main(filepath):
+    user_manager = UserManager(filepath)
     validator = Validator()
     input_manager = InputManager(validator, user_manager)
 
     while True:
+        print("Enter the command: ")
         user_command = input('>>>')
 
         commands = {
-            'create': input_manager.create,
-            'read': input_manager.read,
-            # 'update': user_manager.update_user,
-            'delete': input_manager.delete,
+            "create": input_manager.create,
+            "read": input_manager.read,
+            "update": input_manager.update,
+            "delete": input_manager.delete,
+            "readall": input_manager.read_all
         }
 
         if user_command in commands:
             func = commands[user_command]
-            print(func())
+            func()
         elif user_command == 'exit':
             print('Exiting')
             break
         else:
             print('Unsupported command')
+
+
+if __name__ == "__main__":
+    main("test.txt")

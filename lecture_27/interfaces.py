@@ -11,9 +11,9 @@ class UserInterface(ABC):
     def read(self):
         pass
 
-    # @abstractmethod
-    # def update(self, first_name, last_name, email):
-    #     pass
+    @abstractmethod
+    def update(self, field_name, new_value, first_name="", last_name="", email=""):
+        pass
 
     @abstractmethod
     def delete(self, first_name: str = "", last_name: str = "", email: str = "", phone: str = ""):
