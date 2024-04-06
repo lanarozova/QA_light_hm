@@ -87,32 +87,41 @@ class InputManager:
             field = input("Enter the field you want to update: ").lower()
             new_value = input("Enter the new value: ").lower()
 
-            if all([user_inp, field, new_value]):
+            validate_name = self.validator.validate_name
+            validate_email = self.validator.validate_email
 
-                validate_name = self.validator.validate_name
-                validate_email = self.validator.validate_email
+            # new field value validation
+            validate_field_value = self.validator.choose_validator(field)
+            is_field_validated = False
 
-                validate_field_value = self.validator.choose_validator(field)
-                first_last = new_value.split()
-                validated_field_value = first_last[0]
-                if len(first_last) > 1:
-                    temp = []
-                    for item in first_last:
-                        temp.append(validate_field_value(item))
-                    validated_field_value = all(temp)
+            first_last = new_value.split()
+            if "name" in field:
+                temp = []
+                for name in first_last:
+                    temp.append(validate_field_value(name.capitalize()))
+                is_field_validated = all(temp)
+            else:
+                is_field_validated = validate_field_value(new_value)
 
-                if validated_field_value:
-                    if len(user_inp) > 1:
-                        first_name = user_inp[0].lower().capitalize()
-                        last_name = user_inp[1].lower().capitalize()
-                        if validate_name(first_name) and validate_name(last_name):
-                            print(self.user_manager.update(field, new_value, first_name=first_name, last_name=last_name))
+            if is_field_validated:
+                if len(user_inp) > 1:
+                    first_name = user_inp[0].capitalize()
+                    last_name = user_inp[1].capitalize()
+                    if validate_name(first_name) and validate_name(last_name):
+                        print(self.user_manager.update(field, new_value, first_name=first_name, last_name=last_name))
                 else:
                     email = user_inp[0]
                     if validate_email(email):
                         print(self.user_manager.update(field, new_value, email=email))
 
-        except (UserDoesNotExistError, UpdateInfoNotUniqueError, EmailValidationError, NameValidationError, FieldDoesNotExistError) as error:
+        except (
+                UserDoesNotExistError,
+                UserAlreadyExistsError,
+                UpdateInfoNotUniqueError,
+                EmailValidationError,
+                NameValidationError,
+                FieldDoesNotExistError
+                ) as error:
             print(error)
 
     def read_all(self):

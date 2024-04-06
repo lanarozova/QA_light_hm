@@ -82,14 +82,14 @@ class UserManager(UserInterface):
     def _read_user_by_param(self, user_param) -> str:
         with open(self.file_name, "r") as f:
             for line in f.readlines():
-                line = line.rstrip("\n")
-                match = None
                 if user_param in line:
+                    line = line.rstrip("\n")
                     info_list = line.split(", ")
                     for piece in info_list:
                         match = re.fullmatch(user_param, piece)
                         if match:
                             return line
+            raise UserDoesNotExistError
 
     def read(self, first_name: str = "", last_name: str = "", email: str = "", phone_number: str = ""):
         if not self._check_if_user_exists(first_name, last_name, email, phone_number):
@@ -109,7 +109,12 @@ class UserManager(UserInterface):
         return content
 
     def update(self, field_name: str, new_value: str, first_name: str = "", last_name: str = "", email: str = ""):
-        user_to_update_str = self._read_user_by_param(new_value)
+        if first_name and last_name:
+            param = " ".join([first_name, last_name])
+        else:
+            param = email
+
+        user_to_update_str = self._read_user_by_param(param)
         user_with_same_new_value_str = self._read_user_by_param(new_value)
 
         if user_with_same_new_value_str == user_to_update_str:
@@ -139,7 +144,7 @@ class UserManager(UserInterface):
             raise FieldDoesNotExistError
 
 #
-if __name__ == "__main__":
-    line = "Lana Lisova, test@gmail.com, 380997865471"
-    match = re.search("380997865471", line)
-    print(match)
+# if __name__ == "__main__":
+#     line = "Lana Lisova, test@gmail.com, 380997865471"
+#     match = re.search("380997865471", line)
+#     print(match)
