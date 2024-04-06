@@ -12,7 +12,7 @@ class UserInterface(ABC):
         pass
 
     @abstractmethod
-    def update(self, field_name, new_value, first_name="", last_name="", email=""):
+    def update(self, field_name: str, new_value: str, first_name: str, last_name: str):
         pass
 
     @abstractmethod

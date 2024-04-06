@@ -23,23 +23,18 @@ class UserManager(UserInterface):
         else:
             print(os.path.abspath(self.file_name))
 
-    def _check_if_user_exists(self, first_name="", last_name="", email="", phone_number=""):
+    def _check_if_user_exists(self, first_name, last_name, email="", phone_number=""):
         with open(self.file_name) as f:
             lines = f.readlines()
 
         for line in lines:
-            if first_name and last_name:
-                match = re.search(" ".join([first_name, last_name]), line)
-                if match:
-                    return True
-            if email:
-                match = re.search(email, line)
-                if match:
-                    return True
-            if phone_number:
-                match = re.search(phone_number, line)
-                if match:
-                    return True
+            line = line.rstrip("\n").split(", ")
+            if email == line[1]:
+                return True
+            if phone_number  == line[2]:
+                return True
+            if " ".join([first_name, last_name]) == line[0]:
+                return True
         return False
 
     def create(self, first_name, last_name, email, phone_number):
@@ -67,7 +62,7 @@ class UserManager(UserInterface):
                 f.write(line)
 
     def delete(self, first_name: str = "", last_name: str = "", email: str = "", phone_number: str = ""):
-        if not self._check_if_user_exists(first_name, last_name, email, phone_number):
+        if not self._check_if_user_exists(first_name, last_name):
             raise UserDoesNotExistError
         else:
             param = ""
@@ -89,10 +84,9 @@ class UserManager(UserInterface):
                         match = re.fullmatch(user_param, piece)
                         if match:
                             return line
-            raise UserDoesNotExistError
 
     def read(self, first_name: str = "", last_name: str = "", email: str = "", phone_number: str = ""):
-        if not self._check_if_user_exists(first_name, last_name, email, phone_number):
+        if not self._check_if_user_exists(first_name, last_name):
             raise UserDoesNotExistError
         else:
             param = None
@@ -108,20 +102,17 @@ class UserManager(UserInterface):
             content = f.read()
         return content
 
-    def update(self, field_name: str, new_value: str, first_name: str = "", last_name: str = "", email: str = ""):
-        if first_name and last_name:
-            param = " ".join([first_name, last_name])
-        else:
-            param = email
+    def update(self, field_name: str, new_value: str, first_name: str, last_name: str):
+        if not self._check_if_user_exists(first_name, last_name):
+            raise UserDoesNotExistError
 
-        user_to_update_str = self._read_user_by_param(param)
+        user_to_update_str = self._read_user_by_param(" ".join([first_name, last_name]))
         user_with_same_new_value_str = self._read_user_by_param(new_value)
 
-        if user_with_same_new_value_str == user_to_update_str:
+        if user_with_same_new_value_str and user_to_update_str != user_with_same_new_value_str:
             raise UpdateInfoNotUniqueError
 
         # deleting the old string in the file and adding the one with updated info
-        self.delete(first_name, last_name, email)
         fields = ["first_name", "last_name", "email", "phone"]
         field_name = field_name.strip().lower()
         if field_name in fields:
@@ -132,6 +123,8 @@ class UserManager(UserInterface):
             all_user_info.extend(user_to_update_ls[1:])
 
             all_user_info[update_field_index] = new_value
+
+            self.delete(first_name, last_name)
 
             first_name = all_user_info[0]
             last_name = all_user_info[1]

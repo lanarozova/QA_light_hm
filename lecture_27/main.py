@@ -10,7 +10,7 @@ def main(filepath):
 
     while True:
         print("Enter the command: ")
-        user_command = input('>>>')
+        user_command = input('>>>').strip().lower()
 
         commands = {
             "create": input_manager.create,
