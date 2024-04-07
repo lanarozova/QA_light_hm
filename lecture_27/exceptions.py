@@ -81,4 +81,3 @@ class FieldDoesNotExistError(Exception):
     def __init__(self, message="The provided field does not exist in the file"):
         self.message = message
         super().__init__(self.message)
-

@@ -4,19 +4,19 @@ from abc import ABC, abstractmethod
 class UserInterface(ABC):
 
     @abstractmethod
-    def create(self, first_name: str, last_name: str, email: str, phone_number: str) -> None:
+    def create(self, first_name: str, last_name: str, email: str, phone_number: str) -> str | None:
         pass
 
     @abstractmethod
-    def read(self):
+    def read(self, first_name: str, last_name: str) -> str | None:
         pass
 
     @abstractmethod
-    def update(self, field_name: str, new_value: str, first_name: str, last_name: str):
+    def update(self, field_name: str, new_value: str, first_name: str, last_name: str) -> str | None:
         pass
 
     @abstractmethod
-    def delete(self, first_name: str = "", last_name: str = "", email: str = "", phone: str = ""):
+    def delete(self, first_name: str, last_name: str) -> str | None:
         pass
 
 
