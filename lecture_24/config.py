@@ -46,8 +46,10 @@ directions = {
 
 folder = "images"
 images = {
-    "snake": "snake.png",
-    "body": "body.png",
+    "snake": "head_up.png",
+    "body": "body_vertical.png",
+    "body_angle": "body_downright.png",
     "apple": "apple.png",
-    "game_over": "game_over.png"
+    "game_over": "game_over.png",
+    "tail": "tail_down.png"
 }

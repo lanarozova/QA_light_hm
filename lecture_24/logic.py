@@ -19,7 +19,7 @@ class GameElement:
             self.direction = "up"
             if image:
                 self.surface = pg.image.load(image).convert_alpha()
-                self.surface = pg.transform.scale(self.surface, size)
+                self.surface = pg.transform.scale(self.surface, self.size)
                 self.rect = self.surface.get_rect(x=pos[0], y=pos[1])
             elif color:
                 self.surface = pg.Surface(self.size)
@@ -52,14 +52,14 @@ class GameElement:
             "down": 180,
             "right": 90
         }
-        rotate_degree = None
+        rotate_degree = 0
         required_degree = degrees[direction]
         current_degree = degrees[self.direction]
 
-        if direction in degrees and degrees[direction] != current_degree:
+        if direction in degrees:
             if required_degree > current_degree:
                 rotate_degree = required_degree - current_degree
-            if degrees[direction] < current_degree:
+            if required_degree < current_degree:
                 rotate_degree = 360 - current_degree + required_degree
 
             self.surface = pg.transform.rotate(self.surface, -rotate_degree)
@@ -75,6 +75,14 @@ class GameElement:
         x = random.randrange(0, scrn_width, cell_size)
         y = random.randrange(0, scrn_height, cell_size)
         return x, y
+
+    def update_image(self, image):
+        self.surface = pg.image.load(image).convert_alpha()
+        self.surface = pg.transform.scale(self.surface, self.size)
+        self.rect = self.surface.get_rect(x=self.rect.x, y=self.rect.y)
+        temp_dir = self.direction
+        self.direction = UP
+        self.rotate(temp_dir)
 
 
 class Snake:
@@ -161,7 +169,36 @@ class Snake:
                 pass
             prev_x, prev_y = current_x, current_y
 
-            el.rotate(element_direction)
+            el.rotate(element_direction) # TODO: split set_direction and .rotate
+
+    def update_images(self):
+        for i in range(1, len(self.body) - 1):
+            next_el = self.body[i + 1]
+            el = self.body[i]
+            if el.direction == next_el.direction:
+                el.update_image(path.join(folder, images["body"]))
+                continue
+            el.update_image(path.join(folder, images["body_angle"]))
+
+            if el.direction == UP and next_el.direction == RIGHT:
+                el.rotate(DOWN)
+            elif el.direction == UP and next_el.direction == LEFT:
+                el.rotate(LEFT)
+            elif el.direction == DOWN and next_el.direction == RIGHT:
+                el.rotate(RIGHT)
+            elif el.direction == DOWN and next_el.direction == LEFT:
+                el.rotate(UP)
+            elif el.direction == LEFT and next_el.direction == UP:
+                el.rotate(RIGHT)
+            elif el.direction == LEFT and next_el.direction == DOWN:
+                el.rotate(DOWN)
+            elif el.direction == RIGHT and next_el.direction == UP:
+                el.rotate(UP)
+            elif el.direction == RIGHT and next_el.direction == DOWN:
+                el.rotate(LEFT)
+        tail = self.body[-1]
+        tail.update_image(path.join(folder, images["tail"]))
+        tail.rotate(tail.direction)
 
     def move(self, offset: list) -> None:
         prev_x, prev_y = self.head.get_pos()

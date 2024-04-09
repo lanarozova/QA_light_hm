@@ -4,7 +4,7 @@ import random
 
 from config import *
 from screen import create, draw_grid
-from instances import Snake, Apple
+from logic import Snake, Apple
 from cycle_generator import Cycle
 
 
@@ -24,7 +24,7 @@ def play_game():
     paused = True
     clock = pg.time.Clock()
     curr_offset = [0, 0]
-    speed = 4
+    speed = 2
     apple_counter = 0
     colors_gen = iter(Cycle([color for color in scrn_colors]))
     scrn_color = next(colors_gen)
@@ -82,6 +82,7 @@ def play_game():
         draw_grid(game_display, CELL_SIZE)
 
         # placing game elements on the screen and updating display
+        snake.update_images()
         apple.draw(game_display)
         snake.draw(game_display)
         pg.display.flip()
