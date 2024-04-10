@@ -3,8 +3,8 @@ import sys
 import random
 
 from config import *
-from screen import create, draw_grid
-from logic import Snake, Apple
+from snake.game_logic.screen import create, create_field, draw_game_over_screen
+from snake.game_logic.logic import Snake, Apple
 from cycle_generator import Cycle
 
 
@@ -12,25 +12,22 @@ def play_game():
     pg.init()
 
     #  game instances creation
-    game_display = create(SCREEN_W, SCREEN_H, colors["black"])
+    game_display = create(SCREEN_W, SCREEN_H)
 
     direction = random.choice([UP, DOWN, RIGHT, LEFT])
-    snake = Snake(game_display, CELL, image=path.join(folder, images["snake"]), direction=direction)
+    snake = Snake(game_display, CELL, image=path.join(folder, images.head), direction=direction)
 
-    apple = Apple(CELL, image=path.join(folder, images["apple"]))
+    apple = Apple(CELL, image=path.join(folder, images.apple))
     apple.set_new_random_pos(game_display, snake.get_positions())
 
     # other needed things
     paused = True
     clock = pg.time.Clock()
     curr_offset = [0, 0]
-    speed = 2
+    speed = 4
     apple_counter = 0
     colors_gen = iter(Cycle([color for color in scrn_colors]))
     scrn_color = next(colors_gen)
-
-    game_over = pg.image.load(path.join(folder, images["game_over"]))
-    game_over = pg.transform.scale(game_over, (SCREEN_W, SCREEN_H))
 
     while True:
         events = pg.event.get()
@@ -67,19 +64,15 @@ def play_game():
 
             #  checking collisions with scrn borders or snake own body
             if snake.is_collision_with_own_body() or snake.is_collision_with_screen_border(game_display):
-                game_display.blit(game_over, (0, 0))
-                go_text = SYS_FONT.render(f"YOUR SCORE IS {apple_counter}", True, colors["black"])
-                go_text_rect = go_text.get_rect()
-                go_text_rect.center = (SCREEN_W / 2, SCREEN_H / 8)
-                game_display.blit(go_text, go_text_rect)
+                draw_game_over_screen(game_display, apple_counter)
                 pg.display.flip()
                 pg.time.wait(1500)
                 pg.quit()
                 sys.exit()
 
         #  drawing screen
-        game_display.fill(scrn_colors[scrn_color])
-        draw_grid(game_display, CELL_SIZE)
+        game_display.fill(scrn_color)
+        create_field(game_display, CELL, CELL_SIZE, GRAY)
 
         # placing game elements on the screen and updating display
         snake.update_images()

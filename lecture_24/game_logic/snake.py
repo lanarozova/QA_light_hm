@@ -1,88 +1,6 @@
+from lecture_24.config import *
+from lecture_24.game_logic.game_element import GameElement
 from os import path
-from config import *
-import random
-
-
-class GameElement:
-
-    def __init__(
-            self,
-            pos: tuple,
-            size: tuple,
-            image: str = "",
-            color: str = "",
-            direction: str = "up"
-    ) -> None:
-
-        if image or color:
-            self.size = size
-            self.direction = "up"
-            if image:
-                self.surface = pg.image.load(image).convert_alpha()
-                self.surface = pg.transform.scale(self.surface, self.size)
-                self.rect = self.surface.get_rect(x=pos[0], y=pos[1])
-            elif color:
-                self.surface = pg.Surface(self.size)
-                self.rect = self.surface.get_rect(x=pos[0], y=pos[1])
-            if self.direction != direction:
-                self.rotate(direction)
-
-        else:
-            raise TypeError("Insufficient arguments to create a class object. Image or color is necessary.")
-
-    def get_pos(self) -> tuple:
-        return self.rect.x, self.rect.y
-
-    # step is used here, need to change to accept coordinates after I figure out how to calc them
-    def move(self, offset: list) -> None:
-        self.rect.x += offset[0]
-        self.rect.y += offset[1]
-
-    def draw(self, scrn: pg.Surface) -> None:
-        scrn.blit(self.surface, self.rect)
-
-    def set_pos(self, pos: tuple) -> None:
-        self.rect.x = pos[0]
-        self.rect.y = pos[1]
-
-    def rotate(self, direction: str) -> None:
-        degrees = {
-            "up": 0,
-            "left": 270,
-            "down": 180,
-            "right": 90
-        }
-        rotate_degree = 0
-        required_degree = degrees[direction]
-        current_degree = degrees[self.direction]
-
-        if direction in degrees:
-            if required_degree > current_degree:
-                rotate_degree = required_degree - current_degree
-            if required_degree < current_degree:
-                rotate_degree = 360 - current_degree + required_degree
-
-            self.surface = pg.transform.rotate(self.surface, -rotate_degree)
-            self.direction = direction
-
-    @staticmethod
-    def generate_random_pos(
-            scrn_width: int,
-            scrn_height: int,
-            cell_size: int
-    ) -> tuple:
-
-        x = random.randrange(0, scrn_width, cell_size)
-        y = random.randrange(0, scrn_height, cell_size)
-        return x, y
-
-    def update_image(self, image):
-        self.surface = pg.image.load(image).convert_alpha()
-        self.surface = pg.transform.scale(self.surface, self.size)
-        self.rect = self.surface.get_rect(x=self.rect.x, y=self.rect.y)
-        temp_dir = self.direction
-        self.direction = UP
-        self.rotate(temp_dir)
 
 
 class Snake:
@@ -169,16 +87,16 @@ class Snake:
                 pass
             prev_x, prev_y = current_x, current_y
 
-            el.rotate(element_direction) # TODO: split set_direction and .rotate
+            el.rotate(element_direction)
 
     def update_images(self):
         for i in range(1, len(self.body) - 1):
             next_el = self.body[i + 1]
             el = self.body[i]
             if el.direction == next_el.direction:
-                el.update_image(path.join(folder, images["body"]))
+                el.update_image(path.join(folder, images.body))
                 continue
-            el.update_image(path.join(folder, images["body_angle"]))
+            el.update_image(path.join(folder, images.body_angle))
 
             if el.direction == UP and next_el.direction == RIGHT:
                 el.rotate(DOWN)
@@ -197,7 +115,7 @@ class Snake:
             elif el.direction == RIGHT and next_el.direction == DOWN:
                 el.rotate(LEFT)
         tail = self.body[-1]
-        tail.update_image(path.join(folder, images["tail"]))
+        tail.update_image(path.join(folder, images.tail))
         tail.rotate(tail.direction)
 
     def move(self, offset: list) -> None:
@@ -228,7 +146,7 @@ class Snake:
         if last_el.direction == RIGHT:
             next_body_el_pos = last_el.rect.topleft[0] - CELL_SIZE, last_el.rect.topleft[1]
 
-        next_body_el = GameElement(next_body_el_pos, CELL, image=path.join(folder, images["body"]))
+        next_body_el = GameElement(next_body_el_pos, CELL, image=path.join(folder, images.body))
         next_body_el.rotate(last_el.direction)
         self.body.append(next_body_el)
 
@@ -248,24 +166,3 @@ class Snake:
         if self.head.rect.top < 0 or self.head.rect.bottom > height:
             return True
         return False
-
-
-class Apple(GameElement):
-
-    def __init__(self, size: tuple, image: str, pos: tuple = (0, 0)):
-        super().__init__(pos, size, image)
-
-    @staticmethod
-    def is_new_pos_taken(worm_positions: list[tuple], new_pos: tuple) -> bool:
-        for pos in worm_positions:
-            if pos == new_pos:
-                return True
-            else:
-                return False
-
-    def set_new_random_pos(self, scrn: pg.Surface, worm_positions: list[tuple]) -> None:
-        new_pos = Apple.generate_random_pos(scrn.get_width(), scrn.get_height(), CELL_SIZE)
-        taken = Apple.is_new_pos_taken(worm_positions, new_pos)
-        while taken and new_pos != self.get_pos():
-            new_pos = Apple.generate_random_pos(scrn.get_width(), scrn.get_height(), CELL_SIZE)
-        self.set_pos(new_pos)
