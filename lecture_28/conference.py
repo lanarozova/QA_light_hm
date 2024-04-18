@@ -11,18 +11,19 @@ from lecture_28.exceptions import (VenueAlreadyExistsError,
                                    SpeakerDoesNotExistError,
                                    VenueDoesNotExistError,
                                    SpeakerIsUsedInEventError,
-                                   EventDoesNotExist)
+                                   EventDoesNotExist,
+                                   NoEventFound,
+                                   DatesIntervalError)
 
 
 class Conference:
 
     def __init__(self, filepath: str):
         self.filepath = filepath
-        # change to lists
         self.speakers: dict[int:Speaker] = {}
         self.venues: dict[int:Venue] = {}
         self.events: dict[int:Event] = {}
-        self._parse_data_from_file()
+        self.__parse_data_from_file()
 
     @staticmethod
     def _check_json_format(data):
@@ -33,21 +34,15 @@ class Conference:
             return False
         return True
 
-    def _extract_json_file_data(self):
+    def __extract_json_file_data(self):
         with open(self.filepath) as file:
             content = file.read()
             if self._check_json_format(content):
                 data = json.loads(content)
         return data
 
-    def _parse_data_from_file(self):
-        """
-        Parses data from the file stated during the initialization
-        Places corresponding classes objects (event, venue, speaker)
-        into Conference class attributes as dicts
-        :return: None
-        """
-        file_data = self._extract_json_file_data()["Schedule"]
+    def __parse_data_from_file(self):
+        file_data = self.__extract_json_file_data()["Schedule"]
 
         for venue in file_data["venues"]:
             self.venues[venue["serial"]] = Venue(
@@ -69,22 +64,20 @@ class Conference:
             )
 
         for event in file_data["events"]:
-            # speakers = []
-            # for speaker in event["speakers"]:
-            #     if speaker in self.speakers:
-            #         speakers.append(speaker)
-            #     else:
-            #         raise SpeakerDoesNotExistError(f"The speaker with the serial {speaker} does not exist")
+            speakers = []
+            if event.get("speakers") is not None:
+                for speaker in event["speakers"]:
+                    if speaker in self.speakers:
+                        speakers.append(speaker)
 
             serial = event.get("serial")
-            name = event.get("name")
+            name = event.get("name").strip()
             event_type = event.get("event_type")
-            time_start = event.get("time_start")
-            time_stop = event.get("time_stop")
+            time_start = event.get("time_start").strip()
+            time_stop = event.get("time_stop").strip()
             venue_serial = event.get("venue_serial")
             description = event.get("description")
             website_url = event.get("website_url")
-            speakers = event.get("speakers")
             categories = event.get("categories")
 
             if event["venue_serial"] not in self.venues:
@@ -104,12 +97,6 @@ class Conference:
             )
 
     def _generate_serial_number(self, class_instance: str):
-        """
-        Generates the serial number in a sequential order depending on the max serial number
-        in the given group of objects: events, venues, speakers
-        :param class_instance: type of object - 'event', 'venue', 'speaker'
-        :return: serial number (int) | None if the type of object is not among the existing
-        """
         if class_instance == "speaker":
             max_serial = max(self.speakers)
         elif class_instance == "venue":
@@ -125,43 +112,17 @@ class Conference:
 
     # ---- SPEAKER related methods -------------------------------------------------------------------------------
     def create_speaker(self, name, photo, url, position, affiliation, twitter, bio):
-        """
-        Creates speaker object and places it into the Conference class dict attribute - speakers
-        :return: True if speaker object is created | None if couldn't create an object and errors raised
-        """
         serial = self._generate_serial_number("speaker")
         for speaker in self.speakers:
-            if speaker.twitter == twitter:
+            if speaker.get_twitter() == twitter:
                 raise SpeakerAlreadyExistsError("User with the same twitter already exists")
-            elif speaker.url == url:
+            elif speaker.get_url() == url:
                 raise SpeakerAlreadyExistsError("User with the same url already exists")
             else:
                 pass
 
         self.speakers[serial] = Speaker(serial, name, photo, url, position, affiliation, twitter, bio)
         return True
-
-    def view_speakers(self, *speakers):
-        table = PrettyTable()
-        table.field_names = ["Serial", "Name", "Photo", "URL", "Position", "Affiliation", "Twitter", "Bio"]
-        table._max_width = {"Serial": 10, "Name": 15, "Photo": 20, "URL": 20, "Position": 15, "Affiliation": 15,
-                            "Twitter": 20, "Bio": 50}
-        for speaker in speakers:
-            if speaker in self.speakers:
-                speaker_obj = self.speakers[speaker]
-                table.add_row(
-                    [
-                        speaker_obj.serial,
-                        speaker_obj.name,
-                        speaker_obj.photo,
-                        speaker_obj.url,
-                        speaker_obj.position,
-                        speaker_obj.affiliation,
-                        speaker_obj.twitter,
-                        speaker_obj.bio
-                    ]
-                )
-        return table
 
     def delete_speaker(self, speaker_serial):
         if speaker_serial not in self.speakers:
@@ -170,37 +131,29 @@ class Conference:
         used_in_events = []
         for event in self.events:
             if speaker_serial in event.speakers:
-                used_in_events.append(event.serial)
+                used_in_events.append(event.get_serial())
         if used_in_events:
             raise SpeakerIsUsedInEventError(
-                f"Cannot delete the speaker as they are mentioned in the following events: {", ".join(used_in_events)}"
+                f"Cannot delete the speaker as they are mentioned in the following events: {used_in_events}"
             )
         del self.speakers[speaker_serial]
-        return True
 
     # ---- VENUE related methods ------------------------------------------------------------------------------------
     def create_venue(self, name, category):
         serial = self._generate_serial_number("venue")
         for venue in self.venues:
-            if venue.name == name and venue.category == category:
+            if venue.get_name() == name and venue.get_category() == category:
                 raise VenueAlreadyExistsError
 
         self.venues[serial] = Venue(serial, name, category)
-        return True
 
     def delete_venue(self, venue_serial: int):
         if venue_serial not in self.venues:
             raise VenueDoesNotExistError
 
         del self.venues[venue_serial]
-        return True
 
-    # def view_venue(self, *venues):
-    #     if venue_serial in self.venues:
-    #         return self.venues[venue_serial]
-
-
-    #  EVENT related methods
+    # ---- VENUE related methods ------------------------------------------------------------------------------------
     def create_event(
             self,
             name,
@@ -218,8 +171,9 @@ class Conference:
             if speaker not in self.speakers:
                 non_existent_speakers.append(speaker)
         if non_existent_speakers:
-            raise SpeakerAlreadyExistsError(
-                f"The speakers {" ,".join(non_existent_speakers)} do not exist. Use create_speaker method first"
+            raise SpeakerDoesNotExistError(
+                f"The speakers {" ,".join(non_existent_speakers)} do not exist. "
+                f"Use create_speaker method to create a speaker first"
             )
         if venue_serial not in self.venues:
             raise VenueDoesNotExistError(
@@ -243,70 +197,113 @@ class Conference:
         if event_serial not in self.events:
             raise EventDoesNotExist
         del self.events[event_serial]
-        return True
 
-    def view_events(self, events):
+    def get_events_table(self, events):
         table = PrettyTable()
-        table.field_names = ["Serial", "Name", "Type", "Start time", "End time", "Venue", "URL", "Speakers", "Categories"]
-        table._max_width = {"Serial": 10, "Name": 30, "Type": 15, "Start time": 10, "End time": 10, "Venue": 15,
+        table.field_names = [
+            "Serial", "Name", "Type", "Start time", "End time", "Venue", "URL", "Speakers", "Categories"
+        ]
+        table._max_width = {"Serial": 10, "Name": 25, "Type": 15, "Start time": 10, "End time": 10, "Venue": 15,
                             "URL": 20, "Speakers": 15, "Categories": 20}
-        for event_serial in events:
-            if event_serial in self.events:
-                event_obj = self.events[event_serial]
-                speakers = []
+        sorted_events = self._sort_events_by_start_time(events)
+        for event_serial in sorted_events:
+            event_obj = self.events[event_serial]
+            speakers = []
+            if event_obj.speakers:
                 for serial in event_obj.speakers:
-                    speakers.append(self.speakers[serial].name)
+                    # if not self.speakers.get(serial):
+                    #     continue
+                    speakers.append(self.speakers[serial].get_name())
 
-                table.add_row(
-                    [
-                        event_obj.serial,
-                        event_obj.name,
-                        event_obj.event_type,
-                        event_obj.time_start,
-                        event_obj.time_stop,
-                        self.venues[event_obj.venue_serial].name,
-                        event_obj.website_url,
-                        speakers,
-                        ", ".join(event_obj.categories)
-                    ]
-                )
+            speakers = speakers[0] if len(speakers) == 1 else ", ".join(speakers)
+
+            table.add_row(
+                [
+                    event_obj.get_serial(),
+                    event_obj.get_name(),
+                    event_obj.get_event_type(),
+                    event_obj.get_time_start(),
+                    event_obj.get_time_stop(),
+                    self.venues[event_obj.venue_serial].get_name(),
+                    event_obj.get_website_url(),
+                    speakers,
+                    ", ".join(event_obj.get_categories())
+                ]
+            )
         return table
 
-    def filter_events_by_date(self, start_date: str, end_date: str):
-        start_date = datetime.datetime.fromisoformat(start_date)
-        end_date = datetime.datetime.fromisoformat(end_date)
+    def filter_events_by_date(self, date: datetime.datetime):
         filtered = []
         for event in self.events.values():
-            if event.time_start >= start_date and event.time_stop <= end_date:
-                filtered.append(event.serial)
+            if event.get_time_start().date() == date.date() and event.get_time_start().time() >= date.time():
+                filtered.append(event.get_serial())
+        return filtered
+
+    def filter_by_date_interval(self, from_date: datetime.datetime, till_date: datetime.datetime, till_date_time):
+        filtered = []
+        if till_date_time and from_date > till_date:
+            raise DatesIntervalError("From date is older than till date")
+
+        till_date_next = till_date + datetime.timedelta(1)
+        for event in self.events.values():
+            if till_date_time:
+                if from_date <= event.get_time_start() <= till_date:
+                    filtered.append(event.get_serial())
+            else:
+                if from_date <= event.get_time_start() < till_date_next:
+                    filtered.append(event.get_serial())
+        if not filtered:
+            raise NoEventFound("Such event is not found, double-check the entry data.")
         return filtered
 
     def filter_events_by_category(self, category: str):
         filtered = []
         for event in self.events.values():
-            if category in event.categories:
-                filtered.append(event.serial)
+            categories = [category.lower() for category in event.get_categories()]
+            if category in categories:
+                filtered.append(event.get_serial())
+        if not filtered:
+            raise NoEventFound(f"Events of category '{category}' not found")
         return filtered
 
     def filter_event_by_speaker(self, speaker_serial=0, speaker_name=""):
         filtered = []
-        speaker = [speaker.serial for speaker in self.speakers.values() if speaker.name == speaker_name]
+        speaker = [speaker.get_serial() for speaker in self.speakers.values() if speaker.get_name() == speaker_name]
         for event in self.events.values():
-            if speaker_serial in event.speakers or speaker[0] in event.speakers:
-                filtered.append(event.serial)
+            if speaker_serial in event.get_speakers() or speaker[0] in event.get_speakers():
+                filtered.append(event.get_serial())
         return filtered
 
     def find_event_by_key_word(self, key_word: str):
         found_events = []
         for event in self.events.values():
             if event.contains_key_word(key_word):
-                found_events.append(event.serial)
+                found_events.append(event.get_serial())
+        if not found_events:
+            raise NoEventFound("Such event is not found, double-check the entry data.")
         return found_events
 
+    def _sort_events_by_start_time(self, events: str | list = ""):
+        if not events:
+            sorted_events = [
+                event.get_serial() for event
+                in sorted(self.events.values(), key=lambda value: value.get_time_start())
+            ]
+        else:
+            events_obj = [event for event in self.events.values() if event.get_serial() in events]
+            sorted_events = [
+                event.get_serial() for event
+                in sorted(events_obj, key=lambda value: value.get_time_start())
+            ]
+        return sorted_events
 
-if __name__ == "__main__":
-    folder = "lecture_28"
-    file_name = "py_fest.json"
-    conference = Conference(file_name)
-    filtered_ev = conference.filter_events_by_date("2014-07-22", "2014-07-23")
-    print(conference.view_events(filtered_ev))
+    def find_event_by_name(self, name: str):
+        event = [event.get_serial() for event in self.events.values() if name.lower() == event.get_name().lower()]
+        if not event:
+            raise EventDoesNotExist(f"Event with name '{name}' does not exist")
+        return event
+
+    def find_event_by_serial(self, serial: int):
+        if serial not in self.events:
+            raise EventDoesNotExist(f"Event with serial number {serial} does not exist")
+        return [serial]

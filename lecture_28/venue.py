@@ -20,5 +20,14 @@ class Venue:
     def get_name(self):
         return self.name
 
+    def update_name(self, name):
+        self.name = name
+
     def get_category(self):
         return self.category
+
+    def update_category(self, category):
+        self.category = category
+
+    def get_all(self):
+        return {"serial": self.serial, "name": self.name, "category": self.category}

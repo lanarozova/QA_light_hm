@@ -20,3 +20,11 @@ class SpeakerIsUsedInEventError(Exception):
 
 class EventDoesNotExist(Exception):
     pass
+
+
+class NoEventFound(Exception):
+    pass
+
+
+class DatesIntervalError(Exception):
+    pass
