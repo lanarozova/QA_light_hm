@@ -54,6 +54,7 @@ RED = (255, 0, 0)
 scrn_colors = Colors((255, 178, 102), (255, 255, 102), (178, 255, 102), (102, 255, 102), (102, 255, 178))
 
 folder = "images"
+sounds = "sounds"
 images = Images("head_up.png", "body_vertical.png", "body_downright.png", "tail_down.png", "apple.png", "game_over.png")
 
 
