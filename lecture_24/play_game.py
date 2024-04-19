@@ -3,7 +3,7 @@ import sys
 import random
 
 from config import *
-from lecture_24.game_logic.screen import create, create_field, draw_game_over_screen
+from lecture_24.game_logic.screen import create, create_field, draw_gray_screen
 from lecture_24.game_logic.snake import Snake
 from lecture_24.game_logic.apple import Apple
 from lecture_24.cycle_generator import Cycle

@@ -1,5 +1,6 @@
-from config import *
+from lecture_24.config import *
 from lecture_24.game_logic.game_element import GameElement
+from lecture_24.game_logic.button import Button
 
 
 def create(h: int, w: int) -> pg.Surface:
@@ -49,22 +50,76 @@ def create_field(scrn: pg.Surface, cell: tuple[int], cell_size, color):
         el.draw(scrn)
 
 
-def draw_game_over_screen(scrn: pg.Surface, game_score):
+def draw_gray_screen(scrn: pg.Surface):
+    scrn.fill(Colors.DARK_GRAY)
+    create_field(scrn, CELL, CELL_SIZE, Colors.WHITE)
+
+
+def display_score(scrn: pg.Surface, game_score):
+    width = scrn.get_width()
+    height = scrn.get_height()
+    score = Button(
+        width // 6,
+        height // 4,
+        CELL_SIZE * 20,
+        CELL_SIZE * 2,
+        f"YOUR SCORE IS {game_score}",
+        Colors.BLACK,
+        Colors.RED)
+    score.draw(scrn)
+
+
+def display_game_over_message(scrn: pg.Surface):
     width = scrn.get_width()
     height = scrn.get_height()
 
-    scrn.fill(DARK_GRAY)
-    create_field(scrn, CELL, CELL_SIZE, WHITE)
+    game_over = Button(
+        width // 6,
+        height // 10,
+        CELL_SIZE * 20,
+        CELL_SIZE * 2,
+        "GAME OVER",
+        Colors.BLACK,
+        Colors.RED)
+    game_over.draw(scrn)
 
-    SYS_FONT.bold = True
 
-    score_text = SYS_FONT.render(f"YOUR SCORE IS {game_score}", True, RED)
-    score_text_rect = score_text.get_rect()
-    score_text_rect.center = (width / 2, height / 7.3)
+# BUTTONS
+play_game_button = Button(
+    SCREEN_W // 6,
+    SCREEN_H // 2,
+    CELL_SIZE * 20,
+    CELL_SIZE * 2,
+    "PLAY",
+    Colors.BLACK,
+    Colors.WHITE)
+quit_button = Button(
+    SCREEN_W // 6,
+    SCREEN_H // 1.425,
+    CELL_SIZE * 20,
+    CELL_SIZE * 2,
+    "QUIT",
+    Colors.BLACK,
+    Colors.WHITE)
+restart_button = Button(
+    SCREEN_W // 6,
+    SCREEN_H // 2,
+    CELL_SIZE * 20,
+    CELL_SIZE * 2,
+    "RESTART",
+    Colors.BLACK,
+    Colors.WHITE)
+resume_button = Button(
+    SCREEN_W // 6,
+    SCREEN_H // 3.325,
+    CELL_SIZE * 20,
+    CELL_SIZE * 2,
+    f"RESUME",
+    Colors.BLACK,
+    Colors.WHITE)
 
-    go_text = SYS_FONT.render(f"GAME OVER", True, RED)
-    go_text_rect = go_text.get_rect()
-    go_text_rect.center = (width / 2, height / 2.26)
 
-    scrn.blit(go_text, go_text_rect)
-    scrn.blit(score_text, score_text_rect)
+
+
+
+

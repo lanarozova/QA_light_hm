@@ -10,12 +10,12 @@ class GameElement:
             size: tuple,
             image: str = "",
             color: str | tuple = "",
-            direction: str = "up"
+            direction: str = UP
     ) -> None:
 
         if image or color:
             self.size = size
-            self.direction = "up"
+            self.direction = UP
             if image:
                 self.surface = pg.image.load(image).convert_alpha()
                 self.surface = pg.transform.scale(self.surface, self.size)
